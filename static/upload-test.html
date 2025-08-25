@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Local RFP Summarizer Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:40px auto;padding:16px}
+</style>
+</head>
+<body>
+  <h2>Upload a PDF → Get Summary (no JS)</h2>
+  <form action="/summarize_rfp" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept="application/pdf" required />
+    <button type="submit">Upload</button>
+  </form>
+  <p style="margin-top:16px;color:#666">Posts directly to Flask. No JavaScript.</p>
+</body>
+</html>

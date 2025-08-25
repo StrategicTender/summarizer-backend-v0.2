@@ -1,0 +1,119 @@
+import os, io, json, html, re, urllib.request, urllib.parse
+from flask import Blueprint, request, jsonify
+
+bp = Blueprint("ai_routes", __name__)
+
+# Stable URL of your already-working extractor endpoint
+BASE_URL = os.getenv("EXTRACT_BASE_URL", "https://summarize-rfp-v2-luyf37yvga-uc.a.run.app")
+
+def _post_multipart(url, fields, files):
+    # Minimal multipart/form-data POST using urllib (no extra deps).
+    boundary = "----horus" + os.urandom(8).hex()
+    body = io.BytesIO()
+    def w(s): body.write(s if isinstance(s, bytes) else s.encode("utf-8"))
+    for k,v in fields.items():
+        w(f"--{boundary}\r\n")
+        w(f'Content-Disposition: form-data; name="{k}"\r\n\r\n')
+        w(str(v) + "\r\n")
+    for (k, filename, content, mimetype) in files:
+        w(f"--{boundary}\r\n")
+        w(f'Content-Disposition: form-data; name="{k}"; filename="{filename}"\r\n')
+        w(f"Content-Type: {mimetype}\r\n\r\n")
+        body.write(content); w("\r\n")
+    w(f"--{boundary}--\r\n")
+    req = urllib.request.Request(url, data=body.getvalue(), method="POST")
+    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        return resp.read()
+
+def _strip_html(s):
+    return re.sub(r"<[^>]+>", " ", s or "")
+
+def _openai_or_placeholders(text, file_label):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        ph = lambda t: f"<p style='color:#64748b'><em>{t} (AI off)</em></p>"
+        return {
+            "executive_summary_html": ph("Executive summary placeholder"),
+            "compliance_html": ph("Compliance checklist placeholder"),
+            "dates_contacts_html": ph("Key dates & contacts placeholder"),
+        }
+    # Minimal REST call (no 'openai' package required)
+    def call(prompt):
+        req = urllib.request.Request("https://api.openai.com/v1/responses", method="POST")
+        req.add_header("Authorization", f"Bearer {api_key}")
+        req.add_header("Content-Type", "application/json")
+        payload = {
+            "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            "input": prompt,
+            "max_output_tokens": 900,
+        }
+        with urllib.request.urlopen(req, data=json.dumps(payload).encode("utf-8"), timeout=120) as r:
+            data = json.load(r)
+            # 'responses' API returns {output_text:[...]} or {output:[{content:[{text:...}]}]}
+            txt = None
+            if isinstance(data.get("output_text"), list):
+                txt = "".join(data["output_text"])
+            elif data.get("output") and data["output"][0].get("content"):
+                parts = data["output"][0]["content"]
+                txt = "".join(p.get("text","") for p in parts if p.get("type")=="output_text" or "text" in p)
+            return txt or ""
+    # Prompts
+    base = text[:20000]  # safety
+    exec_p = f"""You are a proposal analyst. Write a concise executive summary (bulleted where helpful) for file {file_label}. Tone: clear, businesslike. 150-220 words max.
+Source text (may include boilerplate): {base}"""
+    comp_p = f"""From the following RFP text, extract a compliance checklist as HTML <ul><li>…</li></ul>. Include submission method, format, mandatory forms, attestations, evaluation gates.
+Text: {base}"""
+    dates_p = f"""From the RFP text, extract key dates and contacts as a simple 2-column HTML table (<table><tr><th>Item</th><th>Value</th></tr>…</table>). Include close date/time + timezone, Q&A deadline, site visit (if any), contracting authority/email.
+Text: {base}"""
+    try:
+        exec_html = html.escape(call(exec_p)).replace("\n","<br>") if call else ""
+        comp_html = call(comp_p)
+        dates_html = call(dates_p)
+        # Normalize fallbacks
+        if not comp_html: comp_html = "<ul><li>No compliance items detected</li></ul>"
+        if not dates_html: dates_html = "<table><tr><th>Item</th><th>Value</th></tr><tr><td>Close</td><td>-</td></tr></table>"
+        return {
+            "executive_summary_html": f"<div>{exec_html}</div>" if exec_html else "<p>(No executive summary)</p>",
+            "compliance_html": comp_html,
+            "dates_contacts_html": dates_html,
+        }
+    except Exception as e:
+        ph = lambda t: f"<p style='color:#64748b'><em>{t} (AI error: {html.escape(str(e))})</em></p>"
+        return {
+            "executive_summary_html": ph("Executive summary unavailable"),
+            "compliance_html": ph("Compliance checklist unavailable"),
+            "dates_contacts_html": ph("Key dates & contacts unavailable"),
+        }
+
+@bp.route("/summarize_ai", methods=["POST"])
+def summarize_ai():
+    if "file" not in request.files:
+        return jsonify({"error":"no file uploaded; field name must be 'file'"}), 400
+    f = request.files["file"]
+    meta = request.form.get("json") or "{}"
+    try:
+        opts = json.loads(meta)
+    except Exception:
+        opts = {}
+    max_pages = int(opts.get("max_pages", 12))
+    # 1) Call existing extractor to get preview JSON (filename, pages, summary_html)
+    upstream = f"{BASE_URL}/summarize"
+    pdf_bytes = f.read()
+    upstream_json = _post_multipart(
+        upstream,
+        {"json": json.dumps({"max_pages": max_pages})},
+        [("file", f.filename or "upload.pdf", pdf_bytes, f.mimetype or "application/pdf")],
+    )
+    try:
+        base_data = json.loads(upstream_json.decode("utf-8"))
+    except Exception:
+        # If upstream returned HTML by mistake, package it
+        base_data = {"filename": f.filename, "summary_html": upstream_json.decode("utf-8", "ignore")}
+    # 2) Build AI sections from the extracted preview text
+    text_for_ai = _strip_html(base_data.get("summary_html",""))
+    ai_bits = _openai_or_placeholders(text_for_ai, base_data.get("filename") or f.filename)
+    # 3) Return merged JSON
+    out = dict(base_data)
+    out.update(ai_bits)
+    return jsonify(out), 200

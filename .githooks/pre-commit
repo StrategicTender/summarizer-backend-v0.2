@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[pre-commit] running checks..."
+
+staged="$(git diff --cached --name-only)"
+
+# 1) Block env-like files, except sample.env (template)
+if echo "$staged" | grep -E "(^|/)(\.env(\..*)?$|.*\.env(\..*)?$|env|env1)$" | grep -Ev "(^|/)sample\.env$" >/dev/null; then
+  echo "ERROR: Refusing to commit .env-like file(s):"
+  echo "$staged" | grep -E "(^|/)(\.env(\..*)?$|.*\.env(\..*)?$|env|env1)$" | grep -Ev "(^|/)sample\.env$" || true
+  exit 1
+fi
+
+# 2) Secret scan on staged content EXCLUDING sample.env
+#    Only flag plausible private key material (sk-...)
+if git diff --cached -- . ":(exclude)sample.env" | grep -E "sk-[A-Za-z0-9_-]{20,}" >/dev/null; then
+  echo "ERROR: Possible secret detected in staged changes (sk-...)."
+  exit 1
+fi
+
+echo "[pre-commit] ok"

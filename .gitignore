@@ -4,3 +4,13 @@
 .netlify
 env
 env1
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+out-*/
+summary-*.html
+.env
+.env.*
+.envrc
+.rfp.env

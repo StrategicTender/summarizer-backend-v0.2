@@ -26,3 +26,9 @@ Retrieve with:
 ```bash
 netlify env:get CHECKPOINT_RESUME && netlify env:get CHECKPOINT_DRIVER
 ```
+
+## Hardening 2025-08-26T15:33:04
+- Added sample.env (no secrets)
+- Added CI workflow (lint + byte-compile)
+- Added pre-commit hook to block secrets and .env files
+- Updated .gitignore

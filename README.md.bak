@@ -1,0 +1,42 @@
+# Summarizer Backend v0.2
+
+AI-powered RFP Summarizer backend built with **Flask**, designed to extract and summarize Canadian government tenders (PDFs).  
+This backend powers Strategic Tender’s **RFP Summarizer** and future **TenderRadar** platform.
+
+---
+
+## 📖 Overview
+Government tenders are often long, complex, and time-consuming to review.  
+This project provides an automated backend service that ingests a tender PDF and produces:
+
+- **Executive Summary**  
+- **Key Fields**  
+- **Compliance Checklist**  
+- **Preview Section**  
+
+---
+
+## 🚀 Features
+- `/ai/v2/summarize` endpoint  
+- Rich HTML summaries with structured sections  
+- PDF parsing (`pdfplumber`)  
+- Cloud Run & Netlify proxy ready  
+- Checkpointing system  
+
+---
+
+## 🛠 Requirements
+- Python **3.9+**  
+- Virtual environment (`venv`)  
+- `flask`, `flask-cors`, `pdfplumber`, `openai`  
+
+---
+
+## ⚙️ Local Development
+```bash
+git clone https://github.com/StrategicTender/summarizer-backend-v0.2.git
+cd summarizer-backend-v0.2
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+PORT=8811 python3 app.py

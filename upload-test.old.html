@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Local RFP Summarizer Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:40px auto;padding:16px}
+  .row{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+  #go{padding:8px 14px;border:0;border-radius:8px;background:#0b5fff;color:#fff;cursor:pointer}
+  #status{opacity:.8}
+  #out{border:1px solid #ddd;border-radius:10px;padding:16px;min-height:200px}
+</style>
+</head>
+<body>
+  <h1>Upload a PDF → Get Summary</h1>
+  <div class="row">
+    <input id="pdf" type="file" accept="application/pdf"/>
+    <button id="go">Summarize</button>
+    <span id="status"></span>
+  </div>
+  <div id="out">Result will appear here…</div>
+
+<script>
+const PROXY = "http://127.0.0.1:8787"; // proxy must be running
+const el = (id)=>document.getElementById(id);
+const status = (t)=>{ el("status").textContent = t; };
+
+el("go").addEventListener("click", async () => {
+  try {
+    const f = el("pdf").files[0];
+    if (!f) { alert("Choose a PDF first."); return; }
+    status("Reading file…");
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const b64 = String(reader.result).split(",").pop(); // base64
+        status("Posting to proxy…");
+        const r = await fetch(PROXY + "/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: f.name, content: b64 }),
+        });
+        const data = await r.json().catch(() => ({}));
+        status("Done.");
+        el("out").innerHTML = data.summary_html || ("<pre>"+JSON.stringify(data,null,2)+"</pre>");
+      } catch (e) {
+        status("Error");
+        el("out").innerHTML = "<pre>"+String(e)+"</pre>";
+      }
+    };
+    reader.readAsDataURL(f);
+  } catch (e) {
+    status("Error");
+    el("out").innerHTML = "<pre>"+String(e)+"</pre>";
+  }
+});
+</script>
+</body>
+</html>

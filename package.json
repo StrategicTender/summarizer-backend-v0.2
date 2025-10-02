@@ -1,0 +1,17 @@
+{
+  "name": "summarizer-backend-v0.2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "undici": "^7.15.0"
+  },
+  "description": ""
+}

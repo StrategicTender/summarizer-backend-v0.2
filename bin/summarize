@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+FILE="${1:-./RFP 5000088835.pdf}"
+# Always resolve the current SERVICE URL; quote the format so () are literal
+SVC="$(gcloud run services describe summarize-rfp-v2 --region us-central1 --project strategic-tender-rfp --format='value(status.url)' )"
+ROUTE="/v2/summarize"
+OUT="out-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$OUT"
+printf '{"max_pages":12}\n' > "$OUT/opts.json"
+echo "POST -> $SVC$ROUTE"
+curl -sS -D "$OUT/headers.txt" -o "$OUT/response.json" -w "\nHTTP %{http_code}\n" \
+  -F "file=@${FILE};type=application/pdf" \
+  -F "json=@$OUT/opts.json;type=application/json" \
+  "$SVC$ROUTE"
+python3 - "$OUT/response.json" "$OUT/summary.html" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1]))
+open(sys.argv[2],"w").write(d.get("summary_html") or "<h3>No summary_html</h3><pre>"+json.dumps(d,indent=2)+"</pre>")
+print("Saved ->", sys.argv[2])
+PY
+open "$OUT/summary.html" >/dev/null 2>&1 || true
+echo "Headers -> $OUT/headers.txt"
+echo "Done -> $OUT/"

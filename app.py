@@ -1,7 +1,9 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 from ai_routes import ai_bp
 
 app = Flask(__name__)
+CORS(app)
 app.register_blueprint(ai_bp, url_prefix="/ai")
 
 @app.get("/routes")

@@ -1,3 +1,4 @@
+<!-- v2025-10-07 safe build -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,29 +38,49 @@
 
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64Data = reader.result.split(",")[1];
-        const response = await fetch("http://127.0.0.1:8811/ai/v2/summarize-file", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name, file: base64Data })
-        });
+        try {
+          const base64Data = reader.result.split(",")[1];
+          const response = await fetch("http://127.0.0.1:8811/ai/v2/summarize-file", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: file.name, file: base64Data })
+          });
 
-        const data = await response.json();
-        let html = "";
+          if (!response.ok) throw new Error(`Server error ${response.status}`);
+          const data = await response.json();
+          let html = "";
 
-        if (data.executive_summary) {
-          html += `<h3>Executive Summary</h3><p>${data.executive_summary}</p>`;
-          html += `<h3>Scope & Deliverables</h3><ul>${data.scope_and_deliverables.map(x => `<li>${x}</li>`).join("")}</ul>`;
-          html += `<h3>Evaluation & Selection</h3><ul>${data.evaluation_and_selection.map(x => `<li>${x}</li>`).join("")}</ul>`;
-          html += `<h3>Key Compliance Checklist</h3><ul>${Object.entries(data.key_compliance_checklist).map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul>`;
-          html += `<h3>Strategic Tender Insights</h3><p>${data.strategic_tender_insights}</p>`;
-        } else if (data.summary) {
-          html = `<h3>Extracted Text (fallback)</h3><pre>${data.summary}</pre>`;
-        } else {
-          html = `<span style="color:red">Error: Invalid response format.</span>`;
+          // 🔒 Safe coercion: ensure arrays or wrap single strings
+          const safeArray = val => Array.isArray(val) ? val : val ? [val] : [];
+          const safeObject = val => (val && typeof val === "object") ? val : {};
+
+          if (data.executive_summary) {
+            html += `<h3>Executive Summary</h3><p>${data.executive_summary}</p>`;
+
+            const scope = safeArray(data.scope_and_deliverables).map(x => `<li>${x}</li>`).join("");
+            html += `<h3>Scope & Deliverables</h3><ul>${scope || "<li>No items found.</li>"}</ul>`;
+
+            const evals = safeArray(data.evaluation_and_selection).map(x => `<li>${x}</li>`).join("");
+            html += `<h3>Evaluation & Selection</h3><ul>${evals || "<li>No items found.</li>"}</ul>`;
+
+            const checklist = Object.entries(safeObject(data.key_compliance_checklist))
+              .map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("");
+            html += `<h3>Key Compliance Checklist</h3><ul>${checklist || "<li>No compliance items found.</li>"}</ul>`;
+
+            html += `<h3>Strategic Tender Insights</h3><p>${data.strategic_tender_insights || "No insights generated."}</p>`;
+          } 
+          else if (data.summary) {
+            html = `<h3>Extracted Text (fallback)</h3><pre>${data.summary}</pre>`;
+          } 
+          else {
+            html = `<span style="color:red">Error: Invalid or empty response format.</span>`;
+          }
+
+          document.getElementById("output").innerHTML = html;
+        } catch (err) {
+          document.getElementById("output").innerHTML = `<span style="color:red">Client error: ${err.message}</span>`;
+          console.error(err);
         }
-
-        document.getElementById("output").innerHTML = html;
       };
       reader.readAsDataURL(file);
     });

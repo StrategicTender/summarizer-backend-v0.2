@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RFP Summarizer Test</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <title>Strategic Tender – RFP Summarizer</title>
   <style>
     body { font-family: Arial, sans-serif; background:#f8f9fa; margin:0; padding:0; }
     .header { display:flex; align-items:center; gap:15px; padding:20px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
@@ -12,8 +10,7 @@
     .header h1 { margin:0; color:#0a2540; }
     .header p { margin:0; color:#bfa14a; font-weight:bold; }
     .container { max-width:900px; margin:30px auto; padding:20px; }
-    #output { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); min-height:200px; white-space:pre-wrap; }
-    #spinner { display:none; margin-top:10px; text-align:center; }
+    #output { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); white-space:pre-wrap; }
     button { background:#0a2540; color:#fff; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; }
   </style>
 </head>
@@ -30,43 +27,39 @@
     <h2>Upload RFP → Executive One-Pager</h2>
     <input type="file" id="fileInput">
     <button id="summarize">Summarize</button>
-    <div id="spinner">⏳ Please wait...</div>
     <div id="output"></div>
   </div>
 
   <script>
-    const summarizeBtn = document.getElementById('summarize');
-    const output = document.getElementById('output');
-    const spinner = document.getElementById('spinner');
-
-    summarizeBtn.addEventListener('click', async () => {
-      const fileInput = document.getElementById('fileInput');
-      if (!fileInput.files.length) {
-        alert("Please select a file.");
-        return;
-      }
-
-      const file = fileInput.files[0];
-      spinner.style.display = 'block';
-      output.textContent = '';
+    document.getElementById('summarize').addEventListener('click', async () => {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert("Please select a file first.");
 
       const reader = new FileReader();
-      reader.onload = function() {
+      reader.onload = async () => {
         const base64Data = reader.result.split(",")[1];
-        fetch("http://127.0.0.1:8811/ai/v2/summarize-file", {
+        const response = await fetch("http://127.0.0.1:8811/ai/v2/summarize-file", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filename: file.name, file: base64Data })
-        })
-        .then(res => res.json())
-        .then(data => {
-          spinner.style.display = 'none';
-          output.textContent = data.summary || JSON.stringify(data, null, 2);
-        })
-        .catch(err => {
-          spinner.style.display = 'none';
-          output.innerHTML = `<span style="color:red">Error: ${err}</span>`;
         });
+
+        const data = await response.json();
+        let html = "";
+
+        if (data.executive_summary) {
+          html += `<h3>Executive Summary</h3><p>${data.executive_summary}</p>`;
+          html += `<h3>Scope & Deliverables</h3><ul>${data.scope_and_deliverables.map(x => `<li>${x}</li>`).join("")}</ul>`;
+          html += `<h3>Evaluation & Selection</h3><ul>${data.evaluation_and_selection.map(x => `<li>${x}</li>`).join("")}</ul>`;
+          html += `<h3>Key Compliance Checklist</h3><ul>${Object.entries(data.key_compliance_checklist).map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul>`;
+          html += `<h3>Strategic Tender Insights</h3><p>${data.strategic_tender_insights}</p>`;
+        } else if (data.summary) {
+          html = `<h3>Extracted Text (fallback)</h3><pre>${data.summary}</pre>`;
+        } else {
+          html = `<span style="color:red">Error: Invalid response format.</span>`;
+        }
+
+        document.getElementById("output").innerHTML = html;
       };
       reader.readAsDataURL(file);
     });

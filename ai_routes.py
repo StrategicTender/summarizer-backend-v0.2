@@ -33,79 +33,48 @@ def _normalize(payload: dict) -> dict:
     out["key_compliance_checklist"].setdefault("security", "Not specified")
     return out
 
-@ai_bp.route("/v2/summarize-file", methods=["POST","OPTIONS"])
-def summarize_file():
-    cors_headers = {
-        "Access-Control-Allow-Origin": "http://127.0.0.1:5500",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Max-Age": "3600",
+@ai_bp.route("/v2/summarize-file", methods=["POST"])
+def summarize_file_v2():
+    import io, re
+    from PyPDF2 import PdfReader
+    from openai import OpenAI
+    from flask import request, jsonify
+
+    client = OpenAI()
+    data = request.get_json()
+    if not data or "file" not in data:
+        return jsonify({"error": "No file content received"}), 400
+
+    # --- Extract PDF text ---
+    file_bytes = io.BytesIO(base64.b64decode(data["file"]))
+    reader = PdfReader(file_bytes)
+    text = "\n".join([page.extract_text() or "" for page in reader.pages])
+
+    # --- Split by logical sections ---
+    sections = re.split(r"(?=PART\\s+[0-9]+|ANNEX|APPENDIX)", text, flags=re.IGNORECASE)
+    combined_summary = []
+
+    # --- Define prompt templates ---
+    prompts = {
+        "executive": "Write a formal Executive Summary capturing the purpose, background, and key objectives of this RFP.",
+        "scope": "Summarize all deliverables, schedules, and Statement of Work tasks.",
+        "evaluation": "Summarize the evaluation and selection criteria, including weighting and mandatory requirements.",
+        "compliance": "List compliance data such as closing date, laws, submission methods, and contact info.",
+        "insights": "Provide Strategic Tender insights: why this opportunity matters, who it suits, and competitive angles."
     }
-    if request.method == "OPTIONS":
-        return Response(status=204, headers=cors_headers)
 
-    try:
-        data = request.get_json(silent=True) or {}
-        file_b64 = data.get("file")
-        if not file_b64:
-            res = jsonify({"error": "No file content received"})
-            res.status_code = 400
-            res.headers.update(cors_headers)
-            return res
-
-        # Decode PDF → text
-        pdf_bytes = base64.b64decode(file_b64)
-        reader = PdfReader(io.BytesIO(pdf_bytes))
-        text = "".join((page.extract_text() or "") for page in reader.pages)
-        text = _compact(text)[:60000]  # keep prompt size sane
-
-        # === Live AI summary (JSON-only) ===
-        system_msg = (
-            "You are Strategic Tender’s lead public-procurement analyst. "
-            "Read the RFP text and return ONE JSON object with EXACTLY these keys:\n"
-            "executive_summary (string, 120–200 words);\n"
-            "scope_and_deliverables (array of 4–8 short bullets);\n"
-            "evaluation_and_selection (array of 3–6 bullets);\n"
-            "key_compliance_checklist (object with keys: submission, closing_date, contact, applicable_law, security);\n"
-            "strategic_tender_insights (string, 80–150 words).\n"
-            "Be precise and non-speculative. If a field is missing in the source, write 'Not specified'. "
-            "Output MUST be valid JSON only."
-        )
-
-        comp = client.chat.completions.create(
+    # --- Run multi-pass summarization ---
+    for name, instruction in prompts.items():
+        completion = client.chat.completions.create(
             model="gpt-4o-mini",
-            temperature=0.2,
-            response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": f"RFP TEXT (truncated):\n{text}"}
+                {"role": "system", "content": instruction},
+                {"role": "user", "content": text[:120000]}
             ],
+            temperature=0.3,
         )
+        combined_summary.append(f"### {name.capitalize()}\\n{completion.choices[0].message.content.strip()}")
 
-        raw = comp.choices[0].message.content
-        parsed = json.loads(raw)
-        summary = _normalize(parsed)
-
-        res = jsonify(summary)
-        res.headers.update(cors_headers)
-        return res
-
-    except Exception as e:
-        # Last-resort fallback so UI still shows something
-        fallback = {
-            "executive_summary": "AI engine error: " + str(e),
-            "scope_and_deliverables": [],
-            "evaluation_and_selection": [],
-            "key_compliance_checklist": {
-                "submission": "Not specified",
-                "closing_date": "Not specified",
-                "contact": "Not specified",
-                "applicable_law": "Not specified",
-                "security": "Not specified",
-            },
-            "strategic_tender_insights": "Reconnect AI and retry.",
-        }
-        res = jsonify(fallback)
-        res.status_code = 500
-        res.headers.update(cors_headers)
-        return res
+    # --- Merge into one response ---
+    final_summary = "\\n\\n".join(combined_summary)
+    return jsonify({"summary": final_summary})

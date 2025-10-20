@@ -5,31 +5,33 @@
   <title>RFP Summarizer Test</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <!-- Fonts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-
   <style>
-    body { font-family: "Open Sans", sans-serif; background:#f8f9fa; margin:0; padding:0; line-height:1.55; }
+    body { font-family:"Open Sans",sans-serif; background:#f8f9fa; margin:0; padding:0; line-height:1.55; }
     .header { display:flex; align-items:center; gap:15px; padding:20px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
     .header img { height:80px; }
-    .header h1 { margin:0; color:#0a2540; font-family:"Playfair Display", serif; }
+    .header h1 { margin:0; color:#0a2540; font-family:"Playfair Display",serif; font-size:28px; }
     .header p { margin:0; color:#bfa14a; font-weight:bold; }
-
     .container { max-width:900px; margin:30px auto; padding:20px; }
-    #output { background:#fff; padding:32px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    #output { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
     #spinner { display:none; margin-top:10px; text-align:center; }
-    button { background:#0a2540; color:#fff; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; font-weight:600; }
-
-    #result { max-width:820px; margin:32px auto; padding:24px; background:#fff; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,.07); }
-    #result h1, #result h2 { font-family:"Playfair Display", serif; font-weight:700; }
+    button { background:#0a2540; color:#fff; padding:10px 18px; border:none; border-radius:6px; cursor:pointer; font-weight:600; margin-top:10px; }
+    hr.gold { width:160px; height:4px; background:#C9A227; border:none; margin:12px auto 28px; border-radius:2px; }
+    footer { text-align:center; font-size:13px; color:#666; margin-top:40px; padding-bottom:20px; }
+    #result { max-width:820px; margin:32px auto; padding:32px; background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    #result h1,#result h2 { font-family:"Playfair Display",serif; font-weight:700; }
     #result h1 { font-size:30px; text-align:center; margin-bottom:24px; }
-    #result h2 { font-size:21px; margin:28px 0 8px; padding-bottom:6px; border-bottom:3px solid #C9A227; }
+    #result h2 { font-size:21px; margin-top:24px; margin-bottom:8px; padding-bottom:6px; border-bottom:3px solid #C9A227; }
     #result ul { margin:8px 0 16px 20px; }
     #result li { margin:6px 0; }
+    .highlight { background:#FFF9E6; padding:14px 20px; border-radius:10px; margin-top:8px; border-left:4px solid #C9A227; }
+    .download-buttons { text-align:center; margin-top:28px; }
+    .download-buttons button { background:#0A2342; color:#fff; border:none; padding:10px 18px; border-radius:6px; margin:0 6px; cursor:pointer; font-weight:600; }
   </style>
 </head>
-
 <body>
   <div class="header">
     <img src="strategic_tender_logo.png" alt="Strategic Tender Logo">
@@ -47,19 +49,8 @@
     <div id="output"></div>
   </div>
 
-  <hr style="width:160px;height:4px;background:#C9A227;border:none;margin:12px auto 28px;border-radius:2px;">
-  <footer style="text-align:center;font-size:13px;color:#666;margin-top:40px;padding-bottom:20px;">
-    Strategic Tender — AI Summary Tool v2 Beta
-  </footer>
-
-  <div id="download-buttons" style="text-align:center;margin-top:28px;">
-    <button style="background:#0A2342;color:#fff;border:none;padding:10px 18px;border-radius:6px;margin:0 6px;cursor:pointer;font-weight:600;">
-      Download PDF
-    </button>
-    <button style="background:#0A2342;color:#fff;border:none;padding:10px 18px;border-radius:6px;margin:0 6px;cursor:pointer;font-weight:600;">
-      Download DOCX
-    </button>
-  </div>
+  <hr class="gold">
+  <footer>Strategic Tender — AI Summary Tool v2 Beta</footer>
 
   <script>
     document.getElementById('summarize').addEventListener('click', async () => {
@@ -68,16 +59,16 @@
       const file = fileInput.files[0];
       const reader = new FileReader();
       reader.onload = async function() {
-        const typedarray = new Uint8Array(this.result);
-        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-        let textContent = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const txt = await page.getTextContent();
-          textContent += txt.items.map(s => s.str).join(" ") + "\n";
-        }
-        document.getElementById("spinner").style.display = "block";
         try {
+          const typedarray = new Uint8Array(this.result);
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          let textContent = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const txt = await page.getTextContent();
+            textContent += txt.items.map(s => s.str).join(" ") + "\n";
+          }
+          document.getElementById("spinner").style.display = "block";
           const res = await fetch("http://127.0.0.1:8080/ai/v2/summarize-file", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -86,12 +77,15 @@
           const data = await res.json();
           document.getElementById("spinner").style.display = "none";
           if (data.summary) {
-            let html = marked.parse(data.summary);
-            html = html.replace(
-              /(Compliance Checklist<\/h2>)([\s\S]*?)(<h2>Evaluation Criteria)/,
-              '$1<div style="background:#FFF9E6;padding:14px 20px;border-radius:10px;margin-top:8px;">$2</div>$3'
-            );
-            document.getElementById("output").innerHTML = '<div id="result">' + html + '</div>';
+            const html = marked.parse(data.summary);
+            document.getElementById("output").innerHTML = `
+              <div id="result">${html}</div>
+              <div class="download-buttons">
+                <button id="downloadPdf">Download PDF</button>
+                <button id="downloadDocx">Download DOCX</button>
+              </div>`;
+            highlightCompliance();
+            attachDownloads();
           } else if (data.error) {
             document.getElementById("output").innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
           } else {
@@ -104,6 +98,61 @@
       };
       reader.readAsArrayBuffer(file);
     });
+
+    function highlightCompliance() {
+      const headings = document.querySelectorAll("#result h2");
+      headings.forEach(h => {
+        if (h.textContent.includes("Compliance Checklist")) {
+          const next = h.nextElementSibling;
+          if (next && next.tagName === "UL") {
+            const wrapper = document.createElement("div");
+            wrapper.className = "highlight";
+            h.parentNode.insertBefore(wrapper, next);
+            wrapper.appendChild(next);
+          }
+        }
+      });
+    }
+
+    function attachDownloads() {
+      // ✅ PDF Export (visual snapshot)
+      document.getElementById("downloadPdf").addEventListener("click", async () => {
+        const { jsPDF } = window.jspdf;
+        const resultDiv = document.getElementById("result");
+        if (!resultDiv) return alert("No summary to export yet.");
+        const canvas = await html2canvas(resultDiv, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+        while (heightLeft > 0) {
+          pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdf.internal.pageSize.getHeight();
+          if (heightLeft > 0) {
+            pdf.addPage();
+            position -= pdf.internal.pageSize.getHeight();
+          }
+        }
+        pdf.save("Executive-One-Pager.pdf");
+      });
+
+      // ✅ DOCX Export
+      document.getElementById("downloadDocx").addEventListener("click", () => {
+        const resultDiv = document.getElementById("result");
+        if (!resultDiv) return alert("No summary to export yet.");
+        const content = `
+          <html><head><meta charset="UTF-8"></head><body>
+          ${resultDiv.outerHTML}
+          </body></html>`;
+        const blob = window.htmlDocx.asBlob(content);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Executive-One-Pager.docx";
+        link.click();
+      });
+    }
   </script>
 </body>
 </html>

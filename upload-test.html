@@ -5,18 +5,31 @@
   <title>RFP Summarizer Test</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
   <style>
-    body { font-family: Arial, sans-serif; background:#f8f9fa; margin:0; padding:0; }
+    body { font-family: "Open Sans", sans-serif; background:#f8f9fa; margin:0; padding:0; line-height:1.55; }
     .header { display:flex; align-items:center; gap:15px; padding:20px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
     .header img { height:80px; }
-    .header h1 { margin:0; color:#0a2540; }
+    .header h1 { margin:0; color:#0a2540; font-family:"Playfair Display", serif; }
     .header p { margin:0; color:#bfa14a; font-weight:bold; }
+
     .container { max-width:900px; margin:30px auto; padding:20px; }
-    #output { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    #output { background:#fff; padding:32px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
     #spinner { display:none; margin-top:10px; text-align:center; }
-    button { background:#0a2540; color:#fff; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; }
+    button { background:#0a2540; color:#fff; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; font-weight:600; }
+
+    #result { max-width:820px; margin:32px auto; padding:24px; background:#fff; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,.07); }
+    #result h1, #result h2 { font-family:"Playfair Display", serif; font-weight:700; }
+    #result h1 { font-size:30px; text-align:center; margin-bottom:24px; }
+    #result h2 { font-size:21px; margin:28px 0 8px; padding-bottom:6px; border-bottom:3px solid #C9A227; }
+    #result ul { margin:8px 0 16px 20px; }
+    #result li { margin:6px 0; }
   </style>
 </head>
+
 <body>
   <div class="header">
     <img src="strategic_tender_logo.png" alt="Strategic Tender Logo">
@@ -32,6 +45,20 @@
     <button id="summarize">Summarize</button>
     <div id="spinner">⏳ Please wait...</div>
     <div id="output"></div>
+  </div>
+
+  <hr style="width:160px;height:4px;background:#C9A227;border:none;margin:12px auto 28px;border-radius:2px;">
+  <footer style="text-align:center;font-size:13px;color:#666;margin-top:40px;padding-bottom:20px;">
+    Strategic Tender — AI Summary Tool v2 Beta
+  </footer>
+
+  <div id="download-buttons" style="text-align:center;margin-top:28px;">
+    <button style="background:#0A2342;color:#fff;border:none;padding:10px 18px;border-radius:6px;margin:0 6px;cursor:pointer;font-weight:600;">
+      Download PDF
+    </button>
+    <button style="background:#0A2342;color:#fff;border:none;padding:10px 18px;border-radius:6px;margin:0 6px;cursor:pointer;font-weight:600;">
+      Download DOCX
+    </button>
   </div>
 
   <script>
@@ -59,7 +86,12 @@
           const data = await res.json();
           document.getElementById("spinner").style.display = "none";
           if (data.summary) {
-            document.getElementById("output").innerHTML = marked.parse(data.summary);
+            let html = marked.parse(data.summary);
+            html = html.replace(
+              /(Compliance Checklist<\/h2>)([\s\S]*?)(<h2>Evaluation Criteria)/,
+              '$1<div style="background:#FFF9E6;padding:14px 20px;border-radius:10px;margin-top:8px;">$2</div>$3'
+            );
+            document.getElementById("output").innerHTML = '<div id="result">' + html + '</div>';
           } else if (data.error) {
             document.getElementById("output").innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
           } else {
@@ -75,18 +107,3 @@
   </script>
 </body>
 </html>
-
-<style id="st-rich">
-  /* Strategic Tender: Rich headings + gold dividers */
-  #result{max-width:820px;margin:32px auto;padding:24px;background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.07);}#result h1,#result h2{font-weight:700;}#result h1{font-size:26px;text-align:center;margin:0 0 16px;}#result h2{font-size:20px;margin:28px 0 8px;padding-bottom:6px;border-bottom:3px solid #C9A227;}#result ul{margin:8px 0 16px 20px;}#result li{margin:6px 0;}
-</style>
-
-<style id="st-container">#result{max-width:820px;margin:32px auto;padding:32px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);}#result h1{font-size:28px;text-align:center;margin-bottom:24px;}</style>
-
-<hr style="width:160px;height:4px;background:#C9A227;border:none;margin:12px auto 28px;border-radius:2px;">
-<footer style="text-align:center;font-size:13px;color:#666;margin-top:40px;padding-bottom:20px;">Strategic Tender — AI Summary Tool v2 Beta</footer>
-
-<style id="st-spacing">#st-logo{margin-bottom:8px;} hr{margin:8px auto 16px!important;} #result{margin-top:16px!important;}</style>
-
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-<style id="st-fonts">body{font-family:"Open Sans",sans-serif;line-height:1.55;}#result h1,#result h2{font-family:"Playfair Display",serif;}#result h1{font-size:30px;}#result h2{font-size:21px;margin-top:24px;margin-bottom:8px;}</style>

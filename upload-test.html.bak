@@ -92,7 +92,7 @@
 <body>
   <!-- Header -->
   <div class="header">
-    <img src="/static/logo.jpg" alt="Strategic Tender Logo" />
+    <img src="strategic_tender_logo.png" alt="Strategic Tender Logo" />
     <div>
       <h1>Strategic Tender</h1>
       <p>Your Public Procurement Advantage</p>
@@ -102,7 +102,7 @@
   <!-- Hero -->
   <div class="hero">
     <h2>AI-Powered RFP Summarizer</h2>
-    <p>Transform lengthy solicitations into a concise executive one-pager.<br><span style="display:block;margin-top:8px;font-weight:600;color:#002147;font-size:1.1rem;">Upload → Analyze → Download</span></p>
+    <p>Transform lengthy solicitations into a concise executive one-pager. Upload → Analyze → Download.</p>
   </div>
 
   <!-- Upload -->

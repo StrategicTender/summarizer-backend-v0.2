@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Tender – RFP Summarizer</title>
+  <link rel="icon" href="favicon.ico">
+  <style>
+    body{background:linear-gradient(180deg,#fffdf5 0%,#faf8f2 100%);} .card{background:white;border-top:5px solid #c49a3f;border-radius:20px;padding:50px 60px;box-shadow:0 10px 30px rgba(0,0,0,0.08);} h2{color:#0d1a36;font-size:1.4rem;margin-bottom:28px;font-weight:600;} button{background-color:#0d1a36;color:#fff;font-weight:600;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;transition:all 0.3s ease;} button:hover{background-color:#11264f;transform:translateY(-1px);} footer{margin-top:80px;color:#777;} header img{width:100px;height:100px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background-color: #f9fafb;
+      color: #111;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+      padding: 2.5rem 3rem;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    header img {
+      height: 70px;
+      border-radius: 6px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      margin: 0;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+    header p {
+      font-size: 0.95rem;
+      margin: 0;
+      color: #475569;
+    }
+    form {
+      margin-top: 1.25rem;
+    }
+    button {
+      background-color: #1e3a8a;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background-color: #2b4dbb; }
+    #output {
+      margin-top: 2.5rem;
+      line-height: 1.65;
+      font-size: 1rem;
+      color: #111;
+    }
+    .summary-section {
+      background: #f8fafc;
+      border-left: 4px solid #fbbf24;
+      padding: 1rem 1.5rem;
+      margin-top: 1.5rem;
+      border-radius: 8px;
+    }
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 0.5rem;
+    }
+    strong { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+  <style>header{flex-direction:column;text-align:center;margin-bottom:20px;} header img{width:110px;height:110px;margin-bottom:10px;} header h1{font-size:1.9rem;} header span{font-size:1rem;} .divider{width:80px;height:3px;background:#c49a3f;margin:14px auto;border-radius:2px;}</style>
+    body{background:linear-gradient(180deg,#fffdf5 0%,#faf8f2 100%);} .card{background:white;border-top:5px solid #c49a3f;border-radius:20px;padding:50px 60px;box-shadow:0 10px 30px rgba(0,0,0,0.08);} h2{color:#0d1a36;font-size:1.4rem;margin-bottom:28px;font-weight:600;} button{background-color:#0d1a36;color:#fff;font-weight:600;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;transition:all 0.3s ease;} button:hover{background-color:#11264f;transform:translateY(-1px);} footer{margin-top:80px;color:#777;} header img{width:100px;height:100px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+      <img src="static/images/strategic-tender-logo.png" alt="Strategic Tender logo">
+      <div>
+        <h1>Strategic Tender</h1>
+        <p>Your Public Procurement Advantage</p>
+      </div>
+  <div class="divider"></div>
+
+    <h2 style="margin-top:0.5rem;">Upload RFP → Executive One-Pager</h2>
+    <form id="uploadForm">
+      <input type="file" id="fileInput" accept=".pdf">
+      <button type="submit">Summarize</button>
+    </form>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const output = document.getElementById("output");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Please choose a PDF first.");
+
+      output.innerHTML = "<p><em>Processing… please wait.</em></p>";
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64File = reader.result.split(",")[1];
+        const response = await fetch("http://127.0.0.1:8811/ai/v2/summarize-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: base64File })
+        });
+        const data = await response.json();
+
+        if (!data.summary) {
+          output.innerHTML = `<p style="color:red;">Error: No summary returned.</p>`;
+          return;
+        }
+
+        // Proper Markdown parsing: newlines + bold + section separation
+        const clean = data.summary
+          .replace(/\\n/g, "\n")  // fix escaped newlines
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .split(/###\s*/)
+          .filter(s => s.trim());
+
+        output.innerHTML = clean.map(sec => `
+          <div class="summary-section">
+            <div class="section-title">${sec.split("\n")[0].trim()}</div>
+            <div>${sec.replace(sec.split("\n")[0], "").trim().replace(/\n/g, "<br>")}</div>
+          </div>
+        `).join("");
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+  <div id="overlay"><div class="spinner"></div></div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategic Tender – RFP Summarizer</title>
+  <link rel="icon" href="logo.png" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #fffdf5 0%, #faf8f2 100%);
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 40px 10px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    header img {
+      width: 110px;
+      height: 110px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      margin: 0;
+      color: #0d1a36;
+    }
+    header span {
+      display: block;
+      font-size: 1rem;
+      color: #c49a3f;
+      margin-top: 6px;
+    }
+    .divider {
+      width: 80px;
+      height: 3px;
+      background: #c49a3f;
+      margin: 16px auto 30px;
+      border-radius: 2px;
+    }
+    .card {
+      background: white;
+      border-top: 5px solid #c49a3f;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 50px 60px;
+      max-width: 720px;
+      width: 100%;
+      text-align: center;
+    }
+    h2 {
+      font-weight: 600;
+      margin-bottom: 28px;
+      color: #0d1a36;
+      font-size: 1.4rem;
+    }
+    input[type="file"] {
+      padding: 8px;
+      margin-right: 8px;
+    }
+    button {
+      background-color: #0d1a36;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background-color: #11264f;
+      transform: translateY(-1px);
+    }
+    #result {
+      margin-top: 30px;
+      text-align: left;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      background: #f7f9fb;
+      border-left: 4px solid #c49a3f;
+      padding: 20px;
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    #result.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      backdrop-filter: blur(3px);
+    }
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #c49a3f;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% {transform:rotate(0);} 100% {transform:rotate(360deg);} }
+    footer {
+      margin-top: 60px;
+      font-size: 0.85rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="https://www.strategictender.com" target="_blank">
+      <img src="logo.png" alt="Strategic Tender Logo" />
+    </a>
+    <h1>Strategic Tender</h1>
+    <span>Your Public Procurement Advantage</span>
+  </header>
+  <div class="divider"></div>
+  <div class="card">
+    <h2>Upload RFP → Executive One-Pager</h2>
+    <input type="file" id="fileInput" />
+    <button id="summarizeBtn">Summarize</button>
+    <div id="result"></div>
+  </div>
+  <div id="overlay"><div class="spinner"></div></div>
+  <footer>© 2025 Strategic Tender Inc. All rights reserved.</footer>
+  <script>
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    const fileInput = document.getElementById("fileInput");
+    const result = document.getElementById("result");
+    const overlay = document.getElementById("overlay");
+    summarizeBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) { alert("Please choose a PDF file first."); return; }
+      overlay.style.display = "flex";
+      result.textContent = "";
+      result.classList.remove("visible");
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const response = await fetch("http://127.0.0.1:8811/ai/v2/summarize-file", { method: "POST", body: form });
+        if (!response.ok) throw new Error("Server error " + response.status);
+        const data = await response.json();
+        result.innerHTML = data.summary || "<em>No summary returned.</em>";
+        result.classList.add("visible");
+      } catch (err) {
+        result.textContent = "Client error: " + err.message;
+        result.classList.add("visible");
+      } finally {
+        overlay.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>

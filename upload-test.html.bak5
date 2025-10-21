@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategic Tender – RFP Summarizer</title>
+<link rel="icon" type="image/png" href="/static/images/strategic-tender-logo.png">
+<style>
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: linear-gradient(180deg, #fffdf5 0%, #faf8f2 100%);
+    color: #0d1a36;
+  }
+  header {
+    text-align: center;
+    margin-top: 60px;
+  }
+  header img {
+    width: 110px;
+    height: 110px;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  }
+  header h1 {
+    margin: 14px 0 2px 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  header span {
+    font-size: 1rem;
+    color: #b6872f;
+  }
+  .divider {
+    width: 90px;
+    height: 3px;
+    background: #c49a3f;
+    margin: 18px auto 40px auto;
+    border-radius: 2px;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-top: 4px solid #c49a3f;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    border-radius: 20px;
+    padding: 40px 55px;
+    max-width: 650px;
+    width: 90%;
+    text-align: center;
+  }
+  h2 {
+    color: #0d1a36;
+    font-size: 1.25rem;
+    margin-bottom: 25px;
+  }
+  button {
+    background-color: #0d1a36;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  button:hover {
+    background-color: #11264f;
+    transform: translateY(-1px);
+  }
+  footer {
+    text-align: center;
+    margin: 70px 0 30px 0;
+    color: #777;
+    font-size: 0.9rem;
+  }
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    background: rgba(255,255,255,0.2);
+    z-index: 999;
+    flex-direction: column;
+  }
+  .spinner {
+    width: 54px;
+    height: 54px;
+    border: 5px solid #eee;
+    border-top: 5px solid #c49a3f;
+    border-radius: 50%;
+    animation: spin 1.1s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  #statusText {
+    font-size: 1rem;
+    color: #0d1a36;
+    font-weight: 500;
+  }
+  #result {
+    margin-top: 40px;
+    max-width: 800px;
+    width: 90%;
+    background: #fff;
+    border-radius: 18px;
+    padding: 30px 45px;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.07);
+    display: none;
+    text-align: left;
+  }
+  #result h3 {
+    color: #0d1a36;
+    border-bottom: 2px solid #c49a3f;
+    padding-bottom: 4px;
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <img src="/static/images/strategic-tender-logo.png" alt="Strategic Tender Logo" />
+    <h1>Strategic Tender</h1>
+    <span>Your Public Procurement Advantage</span>
+    <div class="divider"></div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Upload RFP → Executive One-Pager</h2>
+      <input type="file" id="fileInput" accept=".pdf" />
+      <br><br>
+      <button id="summarizeBtn">Summarize</button>
+    </div>
+    <div id="result"></div>
+  </main>
+
+  <div id="overlay">
+    <div class="spinner"></div>
+    <div id="statusText">Summarizing RFP...</div>
+  </div>
+
+  <footer>© 2025 Strategic Tender Inc. All rights reserved.</footer>
+
+<script>
+const summarizeBtn = document.getElementById("summarizeBtn");
+const overlay = document.getElementById("overlay");
+const statusText = document.getElementById("statusText");
+const resultDiv = document.getElementById("result");
+
+const steps = ["Summarizing RFP...", "Extracting Sections...", "Preparing Executive One-Pager..."];
+let stepIndex = 0;
+
+function cycleStatus() {
+  statusText.textContent = steps[stepIndex];
+  stepIndex = (stepIndex + 1) % steps.length;
+}
+
+summarizeBtn.addEventListener("click", async () => {
+  const fileInput = document.getElementById("fileInput");
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("Please select a PDF first.");
+    return;
+  }
+
+  overlay.style.display = "flex";
+  const statusTimer = setInterval(cycleStatus, 2000);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch("/ai/v2/summarize-file", { method: "POST", body: formData });
+    const data = await response.json();
+    clearInterval(statusTimer);
+    overlay.style.display = "none";
+
+    if (data.error) {
+      resultDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+    } else {
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = data.summary;
+    }
+  } catch (err) {
+    clearInterval(statusTimer);
+    overlay.style.display = "none";
+    resultDiv.innerHTML = `<p style="color:red;">Client error: ${err.message}</p>`;
+  }
+});
+</script>
+</body>
+</html>

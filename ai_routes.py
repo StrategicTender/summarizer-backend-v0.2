@@ -1,34 +1,33 @@
-from flask import Blueprint, request, jsonify
-from flask_cors import CORS
-from openai import OpenAI
+from flask import Blueprint, request, jsonify, Response, stream_with_context
+from werkzeug.utils import secure_filename
+import os, tempfile, json
+from summarizer import summarize_pdf  # your internal summary function
 
-ai_bp = Blueprint("ai", __name__)
-system_prompt = """You are a senior government procurement analyst. Produce a detailed Executive One-Pager with FOUR sections: 1) Executive Summary (overview, scope, purpose, background, objectives, expected impact), 2) Compliance Checklist (submission method, eligibility, technical criteria, certifications, insurance, security, accessibility, language, pricing, bid validity), 3) Evaluation Criteria (weights, scoring methods, rated vs mandatory requirements), 4) Key Details (solicitation number, title, issuing office, deadlines, contract type, deliverables, location, reporting, contact info, duration, budget if provided). Always use clear Markdown headings and bullet points. Never omit compliance or evaluation criteria."""
+ai_bp = Blueprint("ai_bp", __name__)
 
-client = OpenAI()
-
-@ai_bp.route("/v2/summarize-file", methods=["POST", "OPTIONS"])
-def summarize_file():
-    if request.method == "OPTIONS":
-        return ("", 204)
-
-    data = request.get_json(force=True)
-    filename = data.get("filename", "unknown.pdf")
-    content = data.get("content", "")
-
-    if not content.strip():
-        return jsonify(error="No content provided"), 400
+@ai_bp.route("/v2/summarize", methods=["POST"])
+def summarize_v2():
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": content},
-            ],
-            temperature=0.2,
-            max_tokens=800,
-        )
-        summary_text = response.choices[0].message.content.strip()
-        return jsonify(filename=filename, summary=summary_text, route="/ai/v2/summarize-file")
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "No file provided"}), 400
+
+        filename = secure_filename(file.filename)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+
+        def generate():
+            yield '{"status": "processing", "message": "Starting summarization..."}\n'
+            short_summary, detailed_summary = generate_summary(tmp_path, mode="dual")
+            payload = {
+                "short_summary": short_summary,
+                "detailed_summary": detailed_summary,
+                "status": "done"
+            }
+            yield json.dumps(payload)
+
+        return Response(stream_with_context(generate()), mimetype="application/json")
+
     except Exception as e:
-        return jsonify(error=str(e)), 500
+        return jsonify({"error": str(e)}), 500

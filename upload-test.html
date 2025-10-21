@@ -3,259 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <title>RFP Summarizer — Strategic Tender</title>
-
-  <!-- libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
-
-  <!-- fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-
   <style>
-    :root {
-      --navy:#0a2540;
-      --gold:#C9A227;
-      --paper:#fff;
-      --bg:#f8f9fa;
-      --gold-soft:#FFF9E6;
-    }
-
-    body{
-      font-family:"Open Sans",sans-serif;
-      background:var(--bg);
-      margin:0;
-      color:#222;
-      line-height:1.6;
-    }
-
-    /* Header */
-    .header{
-      display:flex;align-items:center;gap:15px;
-      padding:20px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1);
-    }
+    :root {--navy:#0a2540;--gold:#C9A227;--bg:#f8f9fa;}
+    body{font-family:"Open Sans",sans-serif;background:var(--bg);margin:0;color:#222;line-height:1.6}
+    .header{display:flex;align-items:center;gap:15px;padding:20px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1)}
     .header img{height:80px}
     .header h1{margin:0;color:var(--navy);font-family:"Playfair Display",serif;font-size:28px}
     .header p{margin:0;color:#bfa14a;font-weight:700;font-size:14px}
-
-    /* Hero */
-    .hero{
-      text-align:center;
-      background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 100%);
-      padding:50px 20px 40px;border-bottom:1px solid #e2d7b6;
-    }
+    .hero{text-align:center;background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 100%);padding:50px 20px 40px;border-bottom:1px solid #e2d7b6}
     .hero h2{font-family:"Playfair Display",serif;font-size:28px;color:var(--navy);margin:0 0 10px}
     .hero p{max-width:620px;margin:0 auto;color:#444}
-
-    /* Body container */
     .container{max-width:900px;margin:40px auto;padding:20px;text-align:center}
     input[type=file]{margin:10px 0}
-    button{
-      background:var(--navy);color:#fff;border:none;border-radius:6px;
-      padding:10px 18px;font-weight:600;cursor:pointer;margin-left:10px
-    }
+    button{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-weight:600;cursor:pointer;margin-left:10px}
     #spinner{display:none;margin-top:14px;color:#555}
-
-    /* Result card */
-    #result{
-      max-width:820px;margin:32px auto;padding:32px;background:#fff;border-radius:16px;
-      box-shadow:0 6px 20px rgba(0,0,0,.08);text-align:left
-    }
-    #result h1,#result h2{font-family:"Playfair Display",serif;color:var(--navy);font-weight:700}
-    #result h1{text-align:center;font-size:30px;margin-bottom:24px}
-    #result h2{font-size:21px;margin-top:24px;margin-bottom:10px;padding-bottom:6px;border-bottom:3px solid var(--gold)}
-
-    /* Lists — Safari-safe alignment */
-    #result ul{list-style:disc outside;margin:8px 0 16px 1.5em;padding:0}
-    #result li{margin:6px 0;padding-left:.25em}
-    /* Nested list tightening */
-    #result li ul{margin-top:6px;margin-bottom:6px}
-
-    /* Highlight box */
-    .highlight{
-      background:var(--gold-soft);padding:14px 20px;border-radius:10px;margin-top:8px;border-left:4px solid var(--gold)
-    }
-
-    .download-buttons{text-align:center;margin-top:28px}
-    .download-buttons button{background:#0A2342}
-
-    /* Divider + footer */
+    #output iframe{width:100%;height:1600px;border:none;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
     hr.gold{width:160px;height:4px;background:var(--gold);border:none;margin:12px auto 28px;border-radius:2px}
-    footer{
-      text-align:center;font-size:13px;color:#444;margin-top:40px;padding:30px 0 40px;
-      background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 85%);border-top:2px solid var(--gold)
-    }
+    footer{text-align:center;font-size:13px;color:#444;margin-top:40px;padding:30px 0 40px;background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 85%);border-top:2px solid var(--gold)}
   </style>
 </head>
 <body>
-  <!-- Header -->
   <div class="header">
     <img src="/static/logo.jpg" alt="Strategic Tender Logo" />
-    <div>
-      <h1>Strategic Tender</h1>
-      <p>Your Public Procurement Advantage</p>
-    </div>
+    <div><h1>Strategic Tender</h1><p>Your Public Procurement Advantage</p></div>
   </div>
-
-  <!-- Hero -->
   <div class="hero">
     <h2>AI-Powered RFP Summarizer</h2>
-    <p>Transform lengthy solicitations into a concise executive one-pager.<br><span style="display:block;margin-top:8px;font-weight:600;color:#002147;font-size:1.1rem;">Upload → Analyze → Download</span></p>
+    <p>Transform lengthy solicitations into a concise executive one-pager.<br>
+    <span style="display:block;margin-top:8px;font-weight:600;color:#002147;font-size:1.1rem;">Upload → Analyze → Download</span></p>
   </div>
-
-  <!-- Upload -->
   <div class="container">
     <input type="file" id="fileInput" />
     <button id="summarize">Summarize</button>
     <div id="spinner">⏳ Analyzing document…</div>
     <div id="output"></div>
   </div>
-
   <hr class="gold" />
   <footer>Strategic Tender — AI Summary Tool v2 Beta</footer>
 
-  <script>
-    const fileInput = document.getElementById("fileInput");
-    const summarizeBtn = document.getElementById("summarize");
-    const spinner = document.getElementById("spinner");
-    const output = document.getElementById("output");
+<script>
+const fileInput=document.getElementById("fileInput");
+const summarizeBtn=document.getElementById("summarize");
+const spinner=document.getElementById("spinner");
+const output=document.getElementById("output");
 
-    summarizeBtn.addEventListener("click", async () => {
-      if (!fileInput.files.length) { alert("Please select a file."); return; }
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = async function () {
-        try {
-          const typed = new Uint8Array(this.result);
-          const pdf = await pdfjsLib.getDocument(typed).promise;
-
-          let textContent = "";
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const txt = await page.getTextContent();
-            textContent += txt.items.map(s => s.str).join(" ") + "\n";
-          }
-
-          spinner.style.display = "block";
-
-          const res = await fetch("http://127.0.0.1:8080/ai/v2/summarize-file", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename: file.name, content: textContent })
-          });
-
-          const data = await res.json();
-          spinner.style.display = "none";
-
-          if (!data.summary) {
-            output.innerHTML = `<p style="color:red;">No summary returned${data.error ? `: ${data.error}` : ""}.</p>`;
-            return;
-          }
-
-          const html = marked.parse(data.summary);
-          output.innerHTML = `
-            <div id="result">${html}</div>
-            <div class="download-buttons">
-              <button id="downloadPdf">Download PDF</button>
-              <button id="downloadDocx">Download DOCX</button>
-            </div>`;
-
-          // highlight Compliance Checklist block (first UL after heading)
-          (function highlightCompliance(){
-            const h2s = document.querySelectorAll("#result h2");
-            for (const h of h2s) {
-              if (h.textContent.trim().toLowerCase().includes("compliance checklist")) {
-                const ul = h.nextElementSibling;
-                if (ul && ul.tagName === "UL" && !ul.parentElement.classList.contains("highlight")) {
-                  const wrap = document.createElement("div");
-                  wrap.className = "highlight";
-                  ul.parentNode.insertBefore(wrap, ul);
-                  wrap.appendChild(ul);
-                }
-                break;
-              }
-            }
-          })();
-
-          attachDownloads();
-        } catch (err) {
-          spinner.style.display = "none";
-          output.innerHTML = `<p style="color:red;">Request failed: ${err}</p>`;
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
-
-    function attachDownloads() {
-      // --- Multi-page PDF export (no cut-off) ---
-      document.getElementById("downloadPdf").addEventListener("click", async () => {
-        const { jsPDF } = window.jspdf;
-        const result = document.getElementById("result");
-        if (!result) return alert("No summary to export yet.");
-
-        // Render at higher scale for crisp text
-        const canvas = await html2canvas(result, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-        const imgData = canvas.toDataURL("image/png");
-
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const imgWidth = pageWidth;                          // full page width
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        // First page
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        // Additional pages
-        while (heightLeft > 0) {
-          pdf.addPage();
-          position = position - pageHeight; // shift image up for next slice
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
-
-        pdf.save("Executive-One-Pager.pdf");
-      });
-
-      // --- DOCX export (full content with light inline styles) ---
-      document.getElementById("downloadDocx").addEventListener("click", () => {
-        const result = document.getElementById("result");
-        if (!result) return alert("No summary to export yet.");
-
-        const inlineStyles = `
-          <style>
-            body{font-family:"Open Sans",sans-serif;color:#222;line-height:1.6}
-            h1,h2{font-family:"Playfair Display",serif;color:#0a2540}
-            h2{border-bottom:3px solid #C9A227;padding-bottom:6px}
-            ul{list-style:disc outside;margin:8px 0 16px 1.5em;padding:0}
-            li{margin:6px 0}
-            .highlight{background:#FFF9E6;padding:14px 20px;border-left:4px solid #C9A227;border-radius:8px}
-          </style>
-        `;
-
-        const htmlDoc = `
-          <html>
-            <head><meta charset="UTF-8">${inlineStyles}</head>
-            <body>${result.outerHTML}</body>
-          </html>
-        `;
-
-        const blob = window.htmlDocx.asBlob(htmlDoc);
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "Executive-One-Pager.docx";
-        link.click();
-      });
-    }
-  </script>
+summarizeBtn.addEventListener("click",async()=>{
+ if(!fileInput.files.length){alert("Please select a file.");return;}
+ const formData=new FormData();
+ formData.append("file",fileInput.files[0]);
+ spinner.style.display="block";
+ try{
+   const res=await fetch("http://127.0.0.1:8080/v2/summarize",{method:"POST",body:formData});
+   const html=await res.text();
+   spinner.style.display="none";
+   if(!res.ok){output.innerHTML=`<p style='color:red'>Error: ${res.status}</p>`;return;}
+   output.innerHTML=`<iframe srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>`;
+ }catch(err){
+   spinner.style.display="none";
+   output.innerHTML=`<p style='color:red'>Request failed: ${err}</p>`;
+ }
+});
+</script>
 </body>
 </html>

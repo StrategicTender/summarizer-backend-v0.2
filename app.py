@@ -22,12 +22,12 @@ def summarize_direct():
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js'></script>
     <style>
-      body{{font-family:'Open Sans',sans-serif;background:#fffbe9;color:#0a2540;margin:0;padding:0}}
-      .frame{{max-width:1100px;margin:40px auto;background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:32px}}
+      body{{font-family:'Open Sans',sans-serif;background:linear-gradient(180deg,#fffdf6 0%,#fffbe9 100%);color:#0a2540;margin:0;padding:0}}
+      .frame{{max-width:1100px;margin:60px auto 80px auto;background:#fff;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.08);padding:40px 50px}}
       h1,h2{{font-family:'Playfair Display',serif;color:#0a2540}}
       h1{{margin-top:0}}
       hr{{border:none;height:3px;background:#C9A227;width:90px;margin:10px 0 20px}}
-      footer{{margin-top:40px;text-align:center;font-size:13px;color:#555}}
+      footer{{margin-top:60px;text-align:center;font-size:12.5px;color:#666;text-transform:uppercase;letter-spacing:0.5px;color:#555}}
       .download{{text-align:center;margin-top:24px}}
       .download button{{background:#0a2540;color:#fff;border:none;border-radius:6px;padding:10px 16px;margin:0 8px;cursor:pointer}}
     </style></head><body>

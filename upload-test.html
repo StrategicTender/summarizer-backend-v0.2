@@ -1,69 +1,276 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>RFP Summarizer — Strategic Tender</title>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <title>Strategic Tender — RFP Summarizer (Beta)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    :root {--navy:#0a2540;--gold:#C9A227;--bg:#f8f9fa;}
-    body{font-family:"Open Sans",sans-serif;background:var(--bg);margin:0;color:#222;line-height:1.6}
-    .header{display:flex;align-items:center;gap:15px;padding:20px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1)}
-    .header img{height:80px}
-    .header h1{margin:0;color:var(--navy);font-family:"Playfair Display",serif;font-size:28px}
-    .header p{margin:0;color:#bfa14a;font-weight:700;font-size:14px}
-    .hero{text-align:center;background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 100%);padding:50px 20px 40px;border-bottom:1px solid #e2d7b6}
-    .hero h2{font-family:"Playfair Display",serif;font-size:28px;color:var(--navy);margin:0 0 10px}
-    .hero p{max-width:620px;margin:0 auto;color:#444}
-    .container{max-width:900px;margin:40px auto;padding:20px;text-align:center}
-    input[type=file]{margin:10px 0}
-    button{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-weight:600;cursor:pointer;margin-left:10px}
-    #spinner{display:none;margin-top:14px;color:#555}
-    #output iframe{width:100%;height:1600px;border:none;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
-    hr.gold{width:160px;height:4px;background:var(--gold);border:none;margin:12px auto 28px;border-radius:2px}
-    footer{text-align:center;font-size:13px;color:#444;margin-top:40px;padding:30px 0 40px;background:linear-gradient(to bottom,#FFFBEA 0%,#FFFFFF 85%);border-top:2px solid var(--gold)}
+    :root{
+      --st-navy:#0b2447;
+      --st-gold:#c8a042;
+      --st-slate:#e9eef5;
+      --st-ink:#1b1f24;
+      --st-muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f7f9fc;
+      --radius:16px;
+      --shadow:0 6px 30px rgba(16,24,40,.08);
+    }
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;}
+    .wrap{max-width:1200px;margin:32px auto;padding:0 16px;}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+    .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--st-gold),#f6e6b4);box-shadow:inset 0 0 0 2px rgba(0,0,0,.05)}
+    .hgroup h1{font-size:20px;margin:0;color:var(--st-navy);letter-spacing:.2px}
+    .hgroup p{margin:4px 0 0;color:var(--muted)}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .upline{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--st-slate);}
+    .btn{appearance:none;border:0;background:var(--st-navy);color:#fff;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;transition:transform .05s ease,opacity .2s ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.secondary{background:#fff;color:var(--st-navy);border:1px solid var(--st-slate)}
+    .btn.ghost{background:transparent;color:var(--st-navy)}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    .grid{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;margin-top:16px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .pane{min-height:460px}
+    .pane .head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--st-slate)}
+    .pane .head h3{margin:0;color:var(--st-navy);font-size:16px}
+    .pane .body{padding:16px;max-height:60vh;overflow:auto}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:var(--st-slate);padding:2px 6px;border-radius:8px}
+    .file-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid var(--st-slate);border-radius:999px;color:#111}
+    .tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--st-slate);flex-wrap:wrap}
+    .tab{padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:600;color:#334155}
+    .tab.active{background:var(--st-navy);color:#fff}
+    .hidden{display:none}
+    .muted{color:var(--muted)}
+    /* Spinner (button-local) */
+    .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-left:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .code{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace}
+    .hr{height:1px;background:var(--st-slate);margin:12px 0}
+    .success{color:#05603a}
+    .danger{color:#b42318}
+    .note{background:#fff6e5;border:1px solid #ffe3a3;color:#7a5800;padding:10px 12px;border-radius:12px}
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="/static/logo.jpg" alt="Strategic Tender Logo" />
-    <div><h1>Strategic Tender</h1><p>Your Public Procurement Advantage</p></div>
-  </div>
-  <div class="hero">
-    <h2>AI-Powered RFP Summarizer</h2>
-    <p>Transform lengthy solicitations into a concise executive one-pager.<br>
-    <span style="display:block;margin-top:8px;font-weight:600;color:#002147;font-size:1.1rem;">Upload → Analyze → Download</span></p>
-  </div>
-  <div class="container">
-    <input type="file" id="fileInput" />
-    <button id="summarize">Summarize</button>
-    <div id="spinner">⏳ Analyzing document…</div>
-    <div id="output"></div>
-  </div>
-  <hr class="gold" />
-  <footer>Strategic Tender — AI Summary Tool v2 Beta</footer>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true"></div>
+      <div class="hgroup">
+        <h1>Strategic Tender — AI RFP Summarizer</h1>
+        <p class="muted">Upload a PDF. Get an executive summary and a detailed analysis. Local backend: <span class="kbd">http://127.0.0.1:8811/ai/v2/summarize</span></p>
+      </div>
+    </header>
 
-<script>
-const fileInput=document.getElementById("fileInput");
-const summarizeBtn=document.getElementById("summarize");
-const spinner=document.getElementById("spinner");
-const output=document.getElementById("output");
+    <section class="card">
+      <div class="upline">
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input id="fileInput" type="file" name="file" accept="application/pdf" />
+        </form>
+        <div class="btn-row">
+          <button id="summarizeBtn" class="btn">Summarize PDF</button>
+          <button id="copyShort" class="btn secondary" disabled>Copy Short</button>
+          <button id="copyDetailed" class="btn secondary" disabled>Copy Detailed</button>
+          <button id="downloadHtml" class="btn ghost" disabled>Download HTML</button>
+        </div>
+      </div>
 
-summarizeBtn.addEventListener("click",async()=>{
- if(!fileInput.files.length){alert("Please select a file.");return;}
- const formData=new FormData();
- formData.append("file",fileInput.files[0]);
- spinner.style.display="block";
- try{
-   const res=await fetch("http://127.0.0.1:8080/v2/summarize",{method:"POST",body:formData});
-   const html=await res.text();
-   spinner.style.display="none";
-   if(!res.ok){output.innerHTML=`<p style='color:red'>Error: ${res.status}</p>`;return;}
-   output.innerHTML=`<iframe srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>`;
- }catch(err){
-   spinner.style.display="none";
-   output.innerHTML=`<p style='color:red'>Request failed: ${err}</p>`;
- }
-});
-</script>
+      <div class="grid">
+        <!-- LEFT: Short summary -->
+        <div class="pane card">
+          <div class="head">
+            <h3>Executive Summary</h3>
+            <span id="statusDot" class="muted">Idle</span>
+          </div>
+          <div id="shortPane" class="body">
+            <p class="muted">Your short executive summary will appear here.</p>
+          </div>
+        </div>
+
+        <!-- RIGHT: Detailed with tabs -->
+        <div class="pane card">
+          <div class="head">
+            <h3>Detailed Analysis</h3>
+            <span class="muted">Tabbed view</span>
+          </div>
+          <div class="tabs" id="tabs"></div>
+          <div id="detailPane" class="body">
+            <p class="muted">Upload a PDF to populate the sections. Tabs will auto-detect sections such as Overview, Scope, Mandatory, Evaluation, Trade, Timeline, Risks, Teaming, Pricing, Strategy.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:16px" class="note">
+      Pro tip: Press <span class="kbd">⌘R</span> to refresh after edits. The UI does not gray-out the whole page during processing; only the button shows progress.
+    </section>
+
+    <section id="debug" style="margin-top:12px;color:#475467"></section>
+  </div>
+
+  <script>
+    const el = s => document.querySelector(s);
+    const shortPane = el("#shortPane");
+    const detailPane = el("#detailPane");
+    const tabsEl = el("#tabs");
+    const btnSummarize = el("#summarizeBtn");
+    const btnCopyShort = el("#copyShort");
+    const btnCopyDetailed = el("#copyDetailed");
+    const btnDownloadHtml = el("#downloadHtml");
+    const statusDot = el("#statusDot");
+    const debug = el("#debug");
+
+    const ENDPOINT = "http://127.0.0.1:8811/ai/v2/summarize";
+
+    function setBusy(b){
+      if(b){
+        btnSummarize.disabled = true;
+        btnSummarize.dataset.label = btnSummarize.textContent;
+        btnSummarize.textContent = "Summarizing…";
+        const sp = document.createElement("span");
+        sp.className = "spin";
+        btnSummarize.appendChild(sp);
+        statusDot.textContent = "Processing";
+      } else {
+        btnSummarize.disabled = false;
+        btnSummarize.textContent = btnSummarize.dataset.label || "Summarize PDF";
+        statusDot.textContent = "Idle";
+      }
+    }
+
+    function toHtml(md){
+      if(!md) return "";
+      // minimal markdown: bold ** **, headings **n)**, bullets -, tables ignored
+      let h = md
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); // escape
+      h = h.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      h = h.replace(/(^|\n)- ([^\n]+)/g,'$1<li>$2</li>');
+      h = h.replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>');
+      h = h.replace(/\n{2,}/g,"<br><br>");
+      return h;
+    }
+
+    function splitSections(detailed){
+      // Detect our canonical headings 1) … 10)
+      const keys = [
+        "Overview","Scope","Mandatory","Evaluation","Trade","Timeline","Risk","Teaming","Pricing","Win Strategy"
+      ];
+      const map = {};
+      // Normalize
+      const text = detailed.replace(/\r/g,"");
+      const re = /\*\*\s*\d+\)\s*([^\*]+)\*\*([\s\S]*?)(?=\n\*\*\s*\d+\)|$)/g;
+      let m;
+      while((m = re.exec(text))!==null){
+        const title = m[1].trim();
+        const body = m[2].trim();
+        map[title] = body;
+      }
+      // Fallback if not matched
+      if(Object.keys(map).length===0){
+        map["Full"] = detailed;
+      }
+      // Build tab order from keys if present, else whatever we found
+      const order = Object.keys(map).length ? keys.filter(k => Object.keys(map).some(t => t.toLowerCase().includes(k.toLowerCase()))) : Object.keys(map);
+      // Add any unmatched titles
+      Object.keys(map).forEach(t => {
+        if(!order.some(k => t.toLowerCase().includes(k.toLowerCase()))) order.push(t);
+      });
+      return {order, map};
+    }
+
+    function renderTabs(order, map){
+      tabsEl.innerHTML = "";
+      order.forEach((title, idx) => {
+        const t = document.createElement("button");
+        t.type="button";
+        t.className = "tab" + (idx===0?" active":"");
+        t.textContent = title;
+        t.addEventListener("click", () => {
+          tabsEl.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+          t.classList.add("active");
+          const body = map[Object.keys(map).find(k => k.toLowerCase().includes(title.toLowerCase()))] || "";
+          detailPane.innerHTML = `<div class="section">${toHtml(body)}</div>`;
+        });
+        tabsEl.appendChild(t);
+      });
+      // initial body
+      const firstKey = order[0];
+      const firstBody = map[Object.keys(map).find(k => k.toLowerCase().includes(firstKey.toLowerCase()))] || "";
+      detailPane.innerHTML = `<div class="section">${toHtml(firstBody)}</div>`;
+    }
+
+    async function summarize(){
+      try{
+        const file = el("#fileInput").files[0];
+        if(!file){
+          alert("Please choose a PDF first.");
+          return;
+        }
+        setBusy(true);
+        shortPane.innerHTML = `<p class="muted">Generating…</p>`;
+        detailPane.innerHTML = `<p class="muted">Analyzing…</p>`;
+        tabsEl.innerHTML = "";
+
+        const fd = new FormData(el("#uploadForm"));
+        const resp = await fetch(ENDPOINT, { method:"POST", body: fd });
+        const ok = resp.ok;
+        const text = await resp.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e){ data = { error: text || "Unknown error" }; }
+
+        if(!ok){
+          shortPane.innerHTML = `<p class="danger"><strong>Error:</strong> ${resp.status} ${resp.statusText}</p><div class="hr"></div><div class="code">${text}</div>`;
+          detailPane.innerHTML = `<p class="muted">Fix the error, then try again.</p>`;
+          btnCopyShort.disabled = btnCopyDetailed.disabled = btnDownloadHtml.disabled = true;
+          return;
+        }
+
+        // Render short
+        const shortHtml = toHtml(data.short || "");
+        shortPane.innerHTML = shortHtml || `<p class="muted">No short summary returned.</p>`;
+
+        // Render detailed with tabs
+        const detailed = data.detailed || "";
+        const {order, map} = splitSections(detailed);
+        renderTabs(order, map);
+
+        // Enable actions
+        btnCopyShort.disabled = !data.short;
+        btnCopyDetailed.disabled = !data.detailed;
+        btnDownloadHtml.disabled = !(data.short || data.detailed);
+
+        // Debug
+        debug.innerHTML = `<div class="muted">Response size: short ${ (data.short||"").length } chars • detailed ${ (data.detailed||"").length } chars</div>`;
+      } catch(err){
+        shortPane.innerHTML = `<p class="danger"><strong>Network Error</strong></p><div class="hr"></div><div class="code">${String(err)}</div>`;
+        detailPane.innerHTML = `<p class="muted">Check backend is running on <span class="kbd">127.0.0.1:8811</span>.</p>`;
+        btnCopyShort.disabled = btnCopyDetailed.disabled = btnDownloadHtml.disabled = true;
+      } finally{
+        setBusy(false);
+      }
+    }
+
+    btnSummarize.addEventListener("click", summarize);
+
+    btnCopyShort.addEventListener("click", async ()=>{
+      const html = shortPane.innerText;
+      try{ await navigator.clipboard.writeText(html); btnCopyShort.textContent="Copied!"; setTimeout(()=>btnCopyShort.textContent="Copy Short",1200);}catch(_){}
+    });
+    btnCopyDetailed.addEventListener("click", async ()=>{
+      const html = detailPane.innerText;
+      try{ await navigator.clipboard.writeText(html); btnCopyDetailed.textContent="Copied!"; setTimeout(()=>btnCopyDetailed.textContent="Copy Detailed",1200);}catch(_){}
+    });
+
+    btnDownloadHtml.addEventListener("click", ()=>{
+      const name = (document.getElementById("fileInput").files[0]?.name || "summary").replace(/\.pdf$/i,"");
+      const html = `<!doctype html><meta charset="utf-8"><title>\${name} — Strategic Tender Summary</title><style>body{font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;line-height:1.45;margin:24px;color:#1b1f24} h1{font-size:20px;margin:0 0 12px} h2{font-size:16px;margin:16px 0 8px} .muted{color:#6b7280} .hr{height:1px;background:#e9eef5;margin:12px 0}</style><h1>Strategic Tender — AI RFP Summary</h1><div><h2>Executive Summary</h2>\${shortPane.innerHTML}<div class="hr"></div><h2>Detailed Analysis</h2>\${detailPane.innerHTML}</div>`;
+      const blob = new Blob([html], {type:"text/html"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name + "-summary.html";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
 </body>
 </html>

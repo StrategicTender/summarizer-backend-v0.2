@@ -1,9 +1,8 @@
 from flask import Flask, jsonify
-from ai_routes import ai_bp
+
 import os
 
 app = Flask(__name__)
-app.register_blueprint(ai_bp, url_prefix="/ai")
 
 @app.get("/health")
 def health():
